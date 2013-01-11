@@ -6,7 +6,8 @@ int signalPinLF = 10;
 int signalPinRF = 11;
 
 int lowDuty  = 32; // Lowest duty cycle is 12.5%, scaled to 0-255 for analogWrite().
-int highDuty = 64; // Highest duty cycle is 25%, scaled to 0-255 for analogWrite().
+//int highDuty = 64; // Highest duty cycle is 25%, scaled to 0-255 for analogWrite().
+int highDuty = 40;
 
 boolean rotorsPowered = false; // Check rotors' state.
 
