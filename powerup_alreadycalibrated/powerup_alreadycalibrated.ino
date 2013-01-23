@@ -6,13 +6,14 @@ int signalPinLF = 10;
 int signalPinRF = 11;
 
 int lowDuty  = 32; // Lowest duty cycle is 12.5%, scaled to 0-255 for analogWrite().
-//int highDuty = 64; // Highest duty cycle is 25%, scaled to 0-255 for analogWrite().
-int highDuty = 40;
+int highDuty = 64; // Highest duty cycle is 25%, scaled to 0-255 for analogWrite().
+int medDuty = 40;
 
 boolean rotorsPowered = false; // Check rotors' state.
 
 void setup(){
-  TCCR2B = (TCCR2B & 0xF8) | 6; // Set clock to 125 Hz
+  TCCR2B = (TCCR2B & 0xF8) | 6; // Set clock to 122 Hz for pins 11 and 3
+  TCCR1B = (TCCR1B & 0xF8) | 4; // And for pins 9 and 10
   
   Serial.begin(9600);
   Serial.println("Serial begun");
@@ -45,7 +46,7 @@ void loop(){
     
 }
 
-void powerUpRotor(){ // Power up the rotors, then idle them at low duty cycle. Our ESCs, we believe, go between duty cycle 5% and 10%. Frequency is believed to be 500Hz, which is analogWrite() default.
+void powerUpRotor() { // Power up the rotors, then idle them at low duty cycle. Our ESCs, we believe, go between duty cycle 5% and 10%. Frequency is believed to be 500Hz, which is analogWrite() default.
   long startTime = millis(); // Initialise time at which rotors have started to undergo powerup sequence. Might need to change this to look at start time for individual rotors.
   
   analogWrite(signalPinLB, lowDuty); // Set 12.5% duty cycle PWM wave for rotors.
@@ -62,10 +63,10 @@ void powerUpRotor(){ // Power up the rotors, then idle them at low duty cycle. O
 
   digitalWrite(13, LOW);
 
-  analogWrite(signalPinLB, highDuty); // Set 25% duty cycle PWM wave for rotors.
-  analogWrite(signalPinRB, highDuty);
-  analogWrite(signalPinLF, highDuty);
-  analogWrite(signalPinRF, highDuty);
+  analogWrite(signalPinLB, medDuty); // Set 25% duty cycle PWM wave for rotors.
+  analogWrite(signalPinRB, medDuty);
+  analogWrite(signalPinLF, medDuty);
+  analogWrite(signalPinRF, medDuty);
 
   
   curTime = millis();
