@@ -5,12 +5,16 @@ int rotorPin2 = 9;
 int rotorPin3 = 10;
 int rotorPin4 = 11;
 
+int motorsCheckPin = 7;
+
 int lowDuty  = 32; // Lowest duty cycle is 12.5%, scaled to 0-255 for analogWrite().
 int highDuty = 64; // Highest duty cycle is 25%, scaled to 0-255 for analogWrite().
 
-boolean rotorsPowered = false; // Check rotors' state.
+boolean ESCsPoweredAtStart = false; // Check if rotors are powered at the start
+boolean ESCsPowered = false; // Used to check rotors' state.
+boolean startupSuccessful = false;
 
-void setup(){
+void setup() {
   TCCR2B = (TCCR2B & 0xF8) | 6; // Set clock to 122 Hz for pins 11 and 3
   TCCR1B = (TCCR1B & 0xF8) | 4; // And for pins 9 and 10
   
@@ -22,21 +26,47 @@ void setup(){
   pinMode(rotorPin3, OUTPUT);
   pinMode(rotorPin4, OUTPUT);
   
-  pinMode(13, OUTPUT);
+  pinMode(motorsCheckPin, INPUT);
   
-  powerUpRotor();
-  Serial.println("Rotors powered up");
-  rotorsPowered = true;
+  if (digitalRead(motorsCheckPin) == HIGH) { // Check if ESCs are already powered at Arduino startup. If they are, we can't start them properly.
+    ESCsPoweredAtStart = true;
+  }
+  
+  setRotor(0, 0); // Set pins to lowest duty cycle, ready for rotors to be powered up
+  
 }
 
-void loop(){
-    if (rotorsPowered == true){ 
+void loop() {
+  //Serial.println(ESCsPoweredAtStart);
+  
+  if (ESCsPoweredAtStart == false) { // If we didn't have power at the start, we have the possibility of starting the motors.
+    if (digitalRead(motorsCheckPin) == HIGH) { // Check if ESCs are powered now
+      ESCsPowered = true;
+    }
+    else {
+      ESCsPowered = false;
+    }
+    
+    if (ESCsPowered == true && startupSuccessful == true) {  // If we have power and have started the motors, enter main flying loop.
       Serial.println("Reaches main loop");
     }
 
-    else{
-      Serial.println("Rotors lost power?");
+    else if (ESCsPowered == true && startupSuccessful == false) { // If we have power and haven't started the motors, we have gotten power *just now*.
+
+      long startTime = millis();
+      long curTime = millis();
+      
+      while(curTime-startTime < 5000) { // Wait 5s at low duty cycle
+        curTime = millis();
+      }
+      
+      setRotor(0, 0.1); // Set rotors to a small idle value
+      
+      startupSuccessful = true;
+      
+      Serial.println("Startup time!");
     }
+  }
 }
 
 void powerUpRotor() { // Power up the rotors, then idle them at 0.5 effort.
@@ -47,19 +77,13 @@ void powerUpRotor() { // Power up the rotors, then idle them at 0.5 effort.
   digitalWrite(13, LOW);
   
   long curTime = millis();
-  while(curTime-startTime < 5000){ // Wait 5s at 12.5%.
+  while(curTime-startTime < 5000) { // Wait 5s at 12.5%.
     curTime = millis();
   }
 
   digitalWrite(13, LOW);
   
   setRotor(0, 0.5); // Set all rotors to half effort
-
-  
-  curTime = millis();
-  while(curTime-startTime < 10000){ // Wait 5s at 25%.
-    curTime = millis();
-  }
 
   digitalWrite(13, HIGH);
 
